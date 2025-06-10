@@ -7,3 +7,13 @@ import (
 type IGen interface {
 	Gen(*parser.Struct) []byte
 }
+
+var generatorMap = map[string]IGen{}
+
+func Register(name string, gen IGen) {
+	generatorMap[name] = gen
+}
+
+func GetGenerator(name string) IGen {
+	return generatorMap[name]
+}

@@ -12,6 +12,10 @@ import (
 
 const GenTypeWrapper = "struct_wrapper"
 
+func init() {
+	gen.Register(GenTypeWrapper, NewWrapperGenerator())
+}
+
 type WrapperGenerator struct {
 }
 

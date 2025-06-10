@@ -11,6 +11,10 @@ import (
 
 const GenType = "doc"
 
+func init() {
+	gen.Register(GenType, NewGenerator())
+}
+
 type Generator struct {
 }
 

@@ -11,6 +11,10 @@ import (
 
 const GenType = "php"
 
+func init() {
+	gen.Register(GenType, NewGenerator())
+}
+
 type Generator struct {
 }
 

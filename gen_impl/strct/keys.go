@@ -12,6 +12,10 @@ import (
 
 const GenTypeKeys = "struct_keys"
 
+func init() {
+	gen.Register(GenTypeKeys, NewKeysGenerator())
+}
+
 type KeyData struct {
 	Json string
 }

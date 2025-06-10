@@ -10,7 +10,11 @@ import (
 	"github.com/SVz777/z_generator/gen/parser"
 )
 
-const GenTypeToMap = "struct_tomap"
+const GenTypeToMap = "struct2map"
+
+func init() {
+	gen.Register(GenTypeToMap, NewToStringMapGenerator())
+}
 
 type ToStringMapGenerator struct {
 }

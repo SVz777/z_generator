@@ -10,9 +10,10 @@ type IParser interface {
 }
 
 type Field struct {
-	Name string
-	Type string
-	Tag  reflect.StructTag
+	Receiver string
+	Name     string
+	Type     string
+	Tag      reflect.StructTag
 }
 
 type Param struct {
@@ -27,6 +28,7 @@ type Func struct {
 }
 
 type Struct struct {
+	Package  string
 	Receiver string
 	Type     string
 	Field    []*Field
@@ -35,6 +37,8 @@ type Struct struct {
 
 func (s *Struct) String() string {
 	ss := strings.Builder{}
+	ss.WriteString("-----package-----\n")
+	ss.WriteString(s.Package + "\n")
 	ss.WriteString("-----struct-----\n")
 	ss.WriteString(s.Receiver + " " + s.Type + "\n")
 	ss.WriteString("-----field-----\n")

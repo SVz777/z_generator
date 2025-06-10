@@ -21,6 +21,10 @@ func TestParser(t *testing.T) {
 	p = parser.NewAST(filename, stname)
 	at := p.Parser()
 
+	fmt.Println("----ast----")
+	fmt.Println(at.String())
+	fmt.Println("----rt----")
+	fmt.Println(rt.String())
 	if at.String() != rt.String() {
 		fmt.Println("----svz----")
 		t.Error("not equal")

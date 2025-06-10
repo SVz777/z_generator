@@ -25,6 +25,7 @@ func NewAST(filename string, structNames string) *AST {
 
 func (t *AST) Parser() (out *Struct) {
 	out = &Struct{}
+	out.Package = t.fileNode.Name.String()
 
 	ast.Inspect(t.fileNode, func(node ast.Node) bool {
 		switch tp := node.(type) {
@@ -43,6 +44,7 @@ func (t *AST) Parser() (out *Struct) {
 
 						ff := &Field{}
 						ff.Type = t.getTypeName(field.Type)
+						ff.Receiver = out.Receiver
 						ff.Name = field.Names[0].String()
 						if field.Tag == nil {
 							ff.Tag = reflect.StructTag("")

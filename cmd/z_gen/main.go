@@ -42,7 +42,7 @@ func main() {
 			panic(err)
 		}
 	} else if cfg.Output != "" {
-		f, err := os.OpenFile(cfg.Output, os.O_RDWR|os.O_CREATE, 0666)
+		f, err := os.OpenFile(cfg.Output, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			panic(err)
 		}

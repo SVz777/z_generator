@@ -2,8 +2,9 @@ package options
 
 import (
 	"bytes"
-	"fmt"
+	_ "embed"
 	"go/format"
+	"text/template"
 
 	"github.com/SVz777/z_generator/gen"
 	"github.com/SVz777/z_generator/gen/parser"
@@ -15,6 +16,9 @@ func init() {
 	gen.Register(GenType, NewGenerator())
 }
 
+//go:embed options.tmpl
+var tpl string
+
 type Generator struct {
 }
 
@@ -23,20 +27,30 @@ func NewGenerator() gen.IGen {
 }
 
 func (g *Generator) Gen(v *parser.Struct) []byte {
-	out := &bytes.Buffer{}
-
-	out.WriteString(fmt.Sprintf("func (opts *%s) Update(opt ...Option) {\n", v.Type))
-	out.WriteString("for _, o := range opt {\n")
-	out.WriteString("o(opts)")
-	out.WriteString("}\n")
-	out.WriteString("}\n")
-	for _, field := range v.Field {
-		out.WriteString(fmt.Sprintf("func With%s(v %s) Option {\n", field.Name, field.Type))
-		out.WriteString(fmt.Sprintf("return func(opts *%s) {\n", v.Type))
-		out.WriteString(fmt.Sprintf("opts.%s = v\n", field.Name))
-		out.WriteString("}\n")
-		out.WriteString("}\n")
+	p, err := g.getParams(v)
+	out := bytes.NewBuffer(nil)
+	ins, err := template.New("validate").Parse(tpl)
+	if err != nil {
+		return []byte(err.Error())
 	}
-	ret, _ := format.Source(out.Bytes())
+	if err := ins.Execute(out, p); err != nil {
+		return []byte(err.Error())
+	}
+	ret, err := format.Source(out.Bytes())
+	if err != nil {
+		return []byte(err.Error())
+	}
 	return ret
+}
+
+type params struct {
+	Type   string
+	Fields []*parser.Field
+}
+
+func (g *Generator) getParams(v *parser.Struct) (*params, error) {
+	return &params{
+		Type:   v.Type,
+		Fields: v.Field,
+	}, nil
 }

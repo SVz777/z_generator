@@ -1,13 +1,13 @@
 package strct
 
 import (
-	"bytes"
-	"go/format"
+	_ "embed"
 	"strings"
-	"text/template"
 
 	"github.com/SVz777/z_generator/gen"
 	"github.com/SVz777/z_generator/gen/parser"
+	"github.com/SVz777/z_generator/gen/render"
+	"github.com/SVz777/z_generator/gen/utils"
 )
 
 const GenTypeKeys = "struct_keys"
@@ -16,81 +16,46 @@ func init() {
 	gen.Register(GenTypeKeys, NewKeysGenerator())
 }
 
+//go:embed keys.tmpl
+var keysTpl string
+
 type KeyData struct {
 	Json string
 }
 
 type KeysGenerator struct {
-	v *parser.Struct
 }
 
 func NewKeysGenerator() gen.IGen {
 	return &KeysGenerator{}
 }
 
-func (g *KeysGenerator) Gen(v *parser.Struct) []byte {
-	var (
-		allKeys     []KeyData
-		intKeys     []KeyData
-		uint64Keys  []KeyData
-		float64Keys []KeyData
-	)
-	out := &bytes.Buffer{}
-
-	keysTemp := `
-var KeysGenerator = set.Set{
-{{range .allKeys}}"{{.Json}}":collections.Empty{},
-{{end}}
-}
-var NeedTransformIntKey = set.Set{
-{{range .intKeys}}"{{.Json}}":collections.Empty{},
-{{end}}
+func (g *KeysGenerator) Gen(v *parser.Struct) ([]byte, error) {
+	return render.Render(GenTypeKeys, keysTpl, g.getParams(v), render.WithFmt())
 }
 
-var NeedTransformUint64Key = set.Set{
-{{range .uint64Keys}}"{{.Json}}":collections.Empty{},
-{{end}}
+type keysParams struct {
+	AllKeys     []KeyData
+	IntKeys     []KeyData
+	Uint64Keys  []KeyData
+	Float64Keys []KeyData
 }
 
-var NeedTransformFloat64Key = set.Set{
-{{range .float64Keys}}"{{.Json}}":collections.Empty{},
-{{end}}
-}
-
-`
-	tmpl, _ := template.New("Tmpl").Parse(keysTemp)
-
+func (g *KeysGenerator) getParams(v *parser.Struct) *keysParams {
+	p := &keysParams{}
 	for _, field := range v.Field {
-		json := field.Tag.Get("json")
-		name := strings.Split(json, ",")[0]
-
-		var tp string
-		if field.Type[0] == '*' {
-			tp = field.Type[1:]
-		} else {
-			tp = field.Type
-		}
-
-		switch tp {
+		// 与改造前保持一致：json tag 为空时 key 就是空串，不回退到字段名
+		key := KeyData{Json: strings.Split(field.Tag.Get("json"), ",")[0]}
+		// 指针类型按值类型归类
+		switch utils.TrimPtr(field.Type) {
 		case "int":
-			intKeys = append(intKeys, KeyData{name})
+			p.IntKeys = append(p.IntKeys, key)
 		case "uint64":
-			uint64Keys = append(uint64Keys, KeyData{name})
+			p.Uint64Keys = append(p.Uint64Keys, key)
 		case "float64":
-			float64Keys = append(float64Keys, KeyData{name})
+			p.Float64Keys = append(p.Float64Keys, key)
 		}
-		allKeys = append(allKeys, KeyData{name})
+		p.AllKeys = append(p.AllKeys, key)
 	}
-
-	if err := tmpl.Execute(out, map[string][]KeyData{
-		"allKeys":     allKeys,
-		"intKeys":     intKeys,
-		"uint64Keys":  uint64Keys,
-		"float64Keys": float64Keys,
-	}); err != nil {
-		panic(err)
-	}
-
-	ret, _ := format.Source(out.Bytes())
-	return ret
+	return p
 }

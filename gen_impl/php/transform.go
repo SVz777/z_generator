@@ -22,10 +22,8 @@ func NewGenerator() gen.IGen {
 	return &Generator{}
 }
 
-func (g *Generator) Gen(v *parser.Struct) []byte {
+func (g *Generator) Gen(v *parser.Struct) ([]byte, error) {
 	out := &bytes.Buffer{}
-	mm := make(map[string]string, len(v.Field))
-
 	out.WriteString(fmt.Sprintf("\"%s\"=>[\n", v.Type))
 
 	for _, field := range v.Field {
@@ -49,10 +47,9 @@ func (g *Generator) Gen(v *parser.Struct) []byte {
 		case "*string":
 			tp = "string"
 		}
-		mm[jsonName] = tp
 		out.WriteString(fmt.Sprintf("'%s'=>'%s',\n", jsonName, tp))
 
 	}
 	out.WriteString("],")
-	return out.Bytes()
+	return out.Bytes(), nil
 }

@@ -1,0 +1,51 @@
+{{- $Type := .Type -}}
+{{- $Receiver := .Receiver -}}
+{{- $Gen := .Gen -}}
+{{- range $field := .Fields -}}
+{{- $fieldTp := $field.Type -}}
+{{- if $Gen.Empty -}}
+// Empty{{ToCamelCase $field.Name}} {{$field.Name}} is empty
+func ({{$Receiver}} *{{$Type}}) Empty{{ToCamelCase $field.Name}}() bool {
+{{- if canBeNil $field }}
+	return {{$Receiver}}.{{$field.Name}} == nil
+{{- else }}
+	// 值类型不能与 nil 比较，用零值判断
+	return {{$Receiver}}.{{$field.Name}} == {{ zeroOf $fieldTp }}
+{{- end }}
+}
+{{- end -}}
+{{ if $Gen.Get }}
+// Get{{ToCamelCase $field.Name}} get {{$field.Name}}
+func ({{$Receiver}} *{{$Type}}) Get{{ToCamelCase $field.Name}}() (ret {{$fieldTp}}) {
+    if {{$Receiver}} == nil {
+        return
+    }
+	return {{$Receiver}}.{{$field.Name}}
+}
+{{- end}}
+
+{{- if $Gen.GetValue -}}
+{{ if isPtr $field.Type}}
+// GetValue{{ToCamelCase $field.Name}} get {{$field.Name}} value
+func ({{$Receiver}} *{{$Type}}) GetValue{{ToCamelCase $field.Name}}() (ret {{trimPtr $fieldTp}}) {
+    if {{$Receiver}} == nil {
+        return
+    }
+    if {{$Receiver}}.{{$field.Name}} == nil {
+        return
+    }
+    return *{{$Receiver}}.{{$field.Name}}
+}
+{{- end}}
+{{- end}}
+{{- if $Gen.Set }}
+// Set{{ToCamelCase $field.Name}} set {{$field.Name}}
+func ({{$Receiver}} *{{$Type}}) Set{{ToCamelCase $field.Name}}(v {{trimPtr $fieldTp}}) {
+{{- if isPtr $field.Type }}
+	{{$Receiver}}.{{$field.Name}} = &v
+{{- else }}
+	{{$Receiver}}.{{$field.Name}} = v
+{{- end }}
+}
+{{ end }}
+{{- end -}}

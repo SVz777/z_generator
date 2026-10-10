@@ -1,0 +1,12 @@
+func ({{.Receiver}} *{{.Type}}) Output() map[string]string {
+	ret := make(map[string]string,{{len .Fields}})
+	{{- range .Fields}}
+	if !{{$.Receiver}}.Empty{{.Name}}() {
+		ret["{{.Key}}"] = {{.Conv}}
+	}
+	{{- end}}
+	return ret
+}
+func ({{.Receiver}} {{.Type}}) MarshalJSON() ([]byte, error) {
+	return json.Marshal({{.Receiver}}.Output())
+}

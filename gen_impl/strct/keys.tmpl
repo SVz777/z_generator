@@ -1,0 +1,20 @@
+
+var KeysGenerator = set.Set{
+{{range .AllKeys}}"{{.Json}}":collections.Empty{},
+{{end}}
+}
+var NeedTransformIntKey = set.Set{
+{{range .IntKeys}}"{{.Json}}":collections.Empty{},
+{{end}}
+}
+
+var NeedTransformUint64Key = set.Set{
+{{range .Uint64Keys}}"{{.Json}}":collections.Empty{},
+{{end}}
+}
+
+var NeedTransformFloat64Key = set.Set{
+{{range .Float64Keys}}"{{.Json}}":collections.Empty{},
+{{end}}
+}
+

@@ -22,10 +22,7 @@ func({{$.Receiver}} *{{$.Type}}) Validate{{.Name}}() error {
     {{- $tags := split $tag $.ValidateTagSep}}
     // {{$tags}}
     {{- range $i := $tags}}
-    {{- $v := $.GetFunc $field $i true}}
-    if {{index $v 0}} {
-        return {{index $v 1}}
-    }
+    {{$.GetFunc $field $i}}
     {{-  end}}
     return nil
 }

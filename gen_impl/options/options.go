@@ -1,13 +1,11 @@
 package options
 
 import (
-	"bytes"
 	_ "embed"
-	"go/format"
-	"text/template"
 
 	"github.com/SVz777/z_generator/gen"
 	"github.com/SVz777/z_generator/gen/parser"
+	"github.com/SVz777/z_generator/gen/render"
 )
 
 const GenType = "options"
@@ -26,21 +24,12 @@ func NewGenerator() gen.IGen {
 	return &Generator{}
 }
 
-func (g *Generator) Gen(v *parser.Struct) []byte {
+func (g *Generator) Gen(v *parser.Struct) ([]byte, error) {
 	p, err := g.getParams(v)
-	out := bytes.NewBuffer(nil)
-	ins, err := template.New("validate").Parse(tpl)
 	if err != nil {
-		return []byte(err.Error())
+		return nil, err
 	}
-	if err := ins.Execute(out, p); err != nil {
-		return []byte(err.Error())
-	}
-	ret, err := format.Source(out.Bytes())
-	if err != nil {
-		return []byte(err.Error())
-	}
-	return ret
+	return render.Render(GenType, tpl, p, render.WithFmt())
 }
 
 type params struct {

@@ -1,19 +1,36 @@
 package strct
 
 import (
-	"bytes"
-	"fmt"
-	"go/format"
+	_ "embed"
+	"strings"
+	"text/template"
+
+	"github.com/SVz777/tk/convert"
 
 	"github.com/SVz777/z_generator/gen"
+	"github.com/SVz777/z_generator/gen/args"
 	"github.com/SVz777/z_generator/gen/parser"
-	"github.com/SVz777/z_generator/gen/utils"
+	"github.com/SVz777/z_generator/gen/render"
 )
 
 const GenTypeWrapper = "struct_wrapper"
 
 func init() {
 	gen.Register(GenTypeWrapper, NewWrapperGenerator())
+	args.Declare(GenTypeWrapper, "empty", "是否生成空值校验")
+	args.Declare(GenTypeWrapper, "get", "是否生成 get 方法")
+	args.Declare(GenTypeWrapper, "get_value", "是否生成 getValue 方法")
+	args.Declare(GenTypeWrapper, "set", "是否生成 set 方法")
+}
+
+//go:embed wrapper.tmpl
+var tpl string
+
+var funcs = template.FuncMap{
+	"ToCamelCase": func(s string) string {
+		r := convert.ToCamelCase(s)
+		return strings.ToTitle(r)
+	},
 }
 
 type WrapperGenerator struct {
@@ -23,41 +40,36 @@ func NewWrapperGenerator() gen.IGen {
 	return &WrapperGenerator{}
 }
 
-func (g *WrapperGenerator) Gen(v *parser.Struct) []byte {
-	out := &bytes.Buffer{}
+func (g *WrapperGenerator) Gen(v *parser.Struct) ([]byte, error) {
+	p := g.getParams(v)
+	return render.Render(GenTypeWrapper, tpl, p, render.WithFuncs(funcs), render.WithFmt())
+}
 
-	for _, field := range v.Field {
-		fieldName := field.Name
-		var fieldTp string
-		if field.Type[0] == '*' {
-			fieldTp = field.Type[1:]
-		} else {
-			fieldTp = field.Type
-		}
-		out.WriteString(fmt.Sprintf("func(%s *%s) Empty%s() bool {\n", v.Receiver, v.Type, fieldName))
-		out.WriteString(fmt.Sprintf("return %s.%s == nil\n", v.Receiver, fieldName))
-		out.WriteString("}\n")
+type params struct {
+	Receiver string
+	Type     string
+	Fields   []*parser.Field
+	Gen      genFuncs
+}
 
-		out.WriteString(fmt.Sprintf("func(%s *%s) Get%s() (ret %s) {\n", v.Receiver, v.Type, fieldName, fieldTp))
-		out.WriteString(fmt.Sprintf("if %s.%s == nil {\n ", v.Receiver, fieldName))
-		out.WriteString("return\n")
-		out.WriteString("}\n")
+type genFuncs struct {
+	Empty    bool
+	Get      bool
+	GetValue bool
+	Set      bool
+}
 
-		if utils.IsValueType(fieldTp) {
-			out.WriteString(fmt.Sprintf("return *%s.%s\n", v.Receiver, fieldName))
-		} else {
-			out.WriteString(fmt.Sprintf("return %s.%s\n", v.Receiver, fieldName))
-		}
-		out.WriteString("}\n")
-
-		out.WriteString(fmt.Sprintf("func(%s *%s) Set%s(v %s){\n", v.Receiver, v.Type, fieldName, fieldTp))
-		if utils.IsValueType(fieldTp) {
-			out.WriteString(fmt.Sprintf("%s.%s = &v\n", v.Receiver, fieldName))
-		} else {
-			out.WriteString(fmt.Sprintf("%s.%s = v\n", v.Receiver, fieldName))
-		}
-		out.WriteString("}\n")
+func (g *WrapperGenerator) getParams(v *parser.Struct) *params {
+	return &params{
+		Receiver: v.Receiver,
+		Type:     v.Type,
+		Fields:   v.Field,
+		// 四项默认全生成，可用 -empty=false -set=false 这类写法按需关闭
+		Gen: genFuncs{
+			Empty:    args.Args.GetBoolOr("empty", true),
+			Get:      args.Args.GetBoolOr("get", true),
+			GetValue: args.Args.GetBoolOr("get_value", true),
+			Set:      args.Args.GetBoolOr("set", true),
+		},
 	}
-	ret, _ := format.Source(out.Bytes())
-	return ret
 }

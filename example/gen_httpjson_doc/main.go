@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/SVz777/z_generator/gen/parser"
@@ -19,6 +20,10 @@ type CancelOrder struct {
 
 func main() {
 	v := CancelOrder{}
-	var p parser.IParser = parser.NewRuntime(v)
-	_, _ = os.Stdout.Write(doc.NewGenerator().Gen(p.Parser()))
+	code, err := doc.NewGenerator().Gen(parser.StructOf(v))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "生成失败: %v\n", err)
+		os.Exit(1)
+	}
+	_, _ = os.Stdout.Write(code)
 }
